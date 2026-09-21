@@ -9,11 +9,10 @@ Skill này đóng gói quy trình đã dùng để tạo hồ sơ giải pháp L
 tiên dùng skill này) — áp dụng được cho **bất kỳ loại tài liệu nào** cần
 định dạng .docx chuẩn, không riêng gì hồ sơ LMS.
 
-Skill này nằm trong repo `claude-skills` cá nhân (nhiều skill khác nhau, mỗi
-skill 1 thư mục con dưới `skills/`), có thể được cài vào một project bằng
-cách copy hoặc symlink thư mục `gen-doc/` này vào `.claude/skills/gen-doc/`
-của project đó. Vì vị trí cài đặt thay đổi theo từng project, **không dùng
-đường dẫn tuyệt đối cố định** — trước khi build, xác định thư mục chứa chính
+Skill này gốc từ repo `claude-skills` cá nhân (github.com/hoangph3/claude-skills,
+nhiều skill khác nhau dưới `skills/`), được cài vào project này bằng cách
+copy. Vì vị trí cài đặt thay đổi theo từng project, **không dùng đường dẫn
+tuyệt đối cố định** — trước khi build, xác định thư mục chứa chính
 `SKILL.md` này (thường là `.claude/skills/gen-doc/` trong project hiện tại;
 nếu không thấy, tìm bằng
 `find / -maxdepth 8 -path "*/skills/gen-doc/template/build.sh" 2>/dev/null`)
@@ -23,11 +22,21 @@ rồi dùng đường dẫn đó thay cho `<SKILL_DIR>` trong các lệnh dướ
 
 ### Bước 1 — Xác định khung nội dung
 
-Hỏi/đọc ngữ cảnh để biết: tài liệu để làm gì (đề án nộp thầu, kế hoạch nội
-bộ, hồ sơ bàn giao...), cho ai đọc, có cần nêu tên đơn vị cụ thể hay bản
-trung lập. Nếu thiếu thông tin quan trọng (tên đơn vị, người ký, nơi nhận)
-mà không suy luận được từ ngữ cảnh, hỏi người dùng 1 câu gọn — nếu người
-dùng nói "không cần" thì build bản trung lập (bỏ `--org`), không hỏi lại.
+Hỏi/đọc ngữ cảnh để biết: tài liệu để làm gì (giới thiệu/show off giải pháp,
+kế hoạch nội bộ, hồ sơ bàn giao, đề án nộp thầu...), cho ai đọc, có cần nêu
+tên đơn vị cụ thể hay bản trung lập. Nếu thiếu thông tin quan trọng (tên đơn
+vị, người ký, nơi nhận) mà không suy luận được từ ngữ cảnh, hỏi người dùng 1
+câu gọn — nếu người dùng nói "không cần" thì build bản trung lập (bỏ
+`--org`), không hỏi lại.
+
+**Mặc định KHÔNG dùng khung "hồ sơ đấu thầu"** (không tự thêm "bên mời
+thầu", "đáp ứng yêu cầu kỹ thuật", bảng đối chiếu "Yêu cầu / Đáp ứng"...) trừ
+khi người dùng nói rõ tài liệu dùng để nộp thầu/đấu thầu. Mặc định trình bày
+thuần túy tính năng + kiến trúc + triển khai — kể cả khi nội dung nguồn là
+một checklist/yêu cầu kỹ thuật do bên khác đưa ra, không tự suy diễn thành
+ngữ cảnh đấu thầu nếu người dùng không nói vậy (rút kinh nghiệm từ 1 lần đã
+làm sai: soạn nguyên một bản "hồ sơ đáp ứng yêu cầu mời thầu" trong khi
+người dùng chỉ muốn tài liệu giới thiệu sản phẩm để trình diễn/show off).
 
 ### Bước 2 — Viết nội dung theo `template/PROMPT.md`
 
@@ -89,6 +98,12 @@ người dùng dễ lấy (tạo thư mục nếu chưa có), báo đường d�
 
 ## Ghi chú
 
+- **Không tự nêu tên công nghệ/nền tảng nền cụ thể** (vd: tên một phần mềm
+  mã nguồn mở đang dùng để xây giải pháp) trong nội dung lẫn trong sơ đồ, trừ
+  khi người dùng nói rõ là muốn nhắc tên đó. Mặc định mô tả chung chung
+  ("hệ thống", "nền tảng") — kể cả khi trong quá trình trao đổi trước đó
+  người dùng có nhắc tên công nghệ nền, không mặc nhiên đưa tên đó vào tài
+  liệu xuất ra nếu không được yêu cầu.
 - Bộ công cụ trong `template/` là toolchain có sẵn (không tự sửa `reference.docx`,
   `finalize_docx.py`... trừ khi người dùng yêu cầu đổi style gốc — xem
   `template/README.md` để hiểu vai trò từng file nếu cần chỉnh).

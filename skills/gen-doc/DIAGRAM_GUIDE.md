@@ -41,23 +41,59 @@ tối đa 2 sắc trong toàn bộ tài liệu.
 
 ## Khung hàm dùng lại (rút gọn từ `make_diagrams.py` mẫu)
 
+**Quan trọng — tránh lỗi chữ tràn ra ngoài border (lỗi hay gặp nhất):**
+không được đoán số ký tự/dòng bằng mắt hay hard-code `fontsize` cố định cho
+mọi box. Luôn đo bbox chữ thật bằng renderer của matplotlib, bọc dòng rồi co
+cỡ chữ tới khi vừa khung — dùng đúng khung hàm `fit_text()` dưới đây, không
+tự viết lại logic wrap thủ công:
+
 ```python
 import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
+import textwrap
 
-def box(ax, xy, w, h, text, fc, ec=LINE, fontsize=10.5, weight="normal"):
+def fit_text(ax, fig, text, max_w_data, max_h_data, fontsize, weight="normal", min_fontsize=6.5):
+    """Bọc dòng + giảm cỡ chữ tới khi khối text vừa bên trong (max_w_data,
+    max_h_data) tính theo tọa độ dữ liệu của ax, đo bằng bbox thực tế."""
+    renderer = fig.canvas.get_renderer()
+    fs = fontsize
+    while fs >= min_fontsize:
+        best_lines = None
+        # quét độ rộng ký tự từ RỘNG xuống HẸP -> chọn cách bọc ÍT DÒNG NHẤT
+        # vẫn vừa khung (quét ngược lại, từ hẹp lên, sẽ chọn nhầm cách bọc
+        # kiểu "ransom note" 1-2 từ/dòng dù không cần thiết)
+        for chars in range(60, 5, -1):
+            wrapped = textwrap.fill(text, width=chars, break_long_words=False)
+            probe = ax.text(0, 0, wrapped, fontsize=fs, weight=weight, ha="center", va="center")
+            bbox_data = probe.get_window_extent(renderer=renderer).transformed(ax.transData.inverted())
+            probe.remove()
+            if bbox_data.width <= max_w_data and bbox_data.height <= max_h_data:
+                best_lines = wrapped
+                break
+        if best_lines is not None:
+            return best_lines, fs
+        fs -= 0.5
+    return textwrap.fill(text, width=14), min_fontsize
+
+
+def box(ax, fig, xy, w, h, text, fc, ec=LINE, fontsize=10.5, weight="normal", pad=0.12):
     x, y = xy
     ax.add_patch(FancyBboxPatch((x, y), w, h,
         boxstyle="round,pad=0.02,rounding_size=0.04",
         linewidth=1.1, edgecolor=ec, facecolor=fc))
-    ax.text(x + w/2, y + h/2, text, ha="center", va="center",
-        fontsize=fontsize, color=INK, weight=weight, linespacing=1.35)
+    wrapped, fs = fit_text(ax, fig, text, w - pad, h - pad, fontsize, weight)
+    ax.text(x + w/2, y + h/2, wrapped, ha="center", va="center",
+        fontsize=fs, color=INK, weight=weight, linespacing=1.3)
 
 def arrow(ax, p1, p2, lw=1.1, color=LINE):
     ax.add_patch(FancyArrowPatch(p1, p2, arrowstyle="-|>",
         mutation_scale=12, linewidth=lw, color=color, shrinkA=2, shrinkB=2))
 ```
+
+`fit_text` cần `fig.canvas.draw()` đã chạy ít nhất 1 lần trước khi gọi (để
+`get_renderer()` có sẵn) — gọi ngay sau khi tạo `fig, ax = plt.subplots(...)`
+và set `xlim`/`ylim`.
 
 Luôn `ax.axis("off")`, đặt tiêu đề sơ đồ bằng `ax.text(...)` căn giữa phía
 trên (không dùng `ax.set_title` mặc định để kiểm soát font/size đồng bộ với
@@ -70,10 +106,15 @@ plt.savefig("img/ten-file.png", dpi=220, bbox_inches="tight", facecolor="white")
 
 ## Quy tắc bắt buộc tránh lỗi hay gặp
 
-- Nhãn lớp/nhóm đặt **phía trên** dải box, không đặt bên trái sát box đầu
-  tiên — nếu text nhãn dài hơn bề rộng box đầu hàng, chữ sẽ đè lên nhau.
-- Luôn xem lại ảnh bằng `Read` sau khi sinh (1 lần), sửa nếu chữ tràn ra
-  ngoài khung hoặc chồng lên nhau, rồi mới nhúng vào tài liệu.
+- Luôn dùng `fit_text()`/`box()` ở trên cho mọi chữ đặt trong khung — không
+  tự đoán `fontsize` hay tự viết `textwrap.fill(width=...)` một lần rồi hy
+  vọng vừa; đây là nguyên nhân chính gây tràn chữ ra ngoài border.
+- Nhãn lớp/nhóm (label đứng ngoài box, không nằm trong khung) đặt **phía
+  trên** dải box bằng `va="bottom"` ngay sát cạnh trên, không đặt bên trái
+  sát box đầu tiên — nếu text nhãn dài hơn bề rộng box đầu hàng, chữ sẽ đè
+  lên nhau (lỗi hay gặp thứ nhì).
+- Luôn xem lại ảnh bằng `Read` sau khi sinh (1 lần), kiểm tra không còn chữ
+  chạm/tràn viền box hoặc chồng lên box khác, rồi mới nhúng vào tài liệu.
 - Không vẽ quá 3 sơ đồ trong 1 tài liệu trừ khi nội dung thật sự cần — sơ đồ
   dùng để làm rõ cấu trúc/tiến độ, không phải trang trí.
 - Chiều rộng nhúng vào docx: `{width=6.3in}` (vừa khít lề trang A4 theo
