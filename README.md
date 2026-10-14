@@ -20,6 +20,7 @@ Sau khi cài, gõ `/<ten-skill>` trong Claude Code ở project đó để gọi 
 | Skill | Mô tả |
 |---|---|
 | [`gen-doc`](skills/gen-doc/SKILL.md) | Soạn tài liệu `.docx` chuẩn văn bản hành chính (đề án, kế hoạch, hồ sơ giải pháp/bàn giao...) — mục lục tự động, bảng biểu chuẩn, kèm sơ đồ minh họa vẽ bằng matplotlib. |
+| [`md-doc`](skills/md-doc/SKILL.md) | Viết tài liệu một lần bằng markdown rồi build ra `.docx`, `.html` (xem trình duyệt) và `.pdf`, nội dung giống hệt nhau ở mọi định dạng; có lệnh `verify` để kiểm tra. |
 
 ## Thêm skill mới
 
